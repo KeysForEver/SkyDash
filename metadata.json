@@ -1,0 +1,5 @@
+{
+  "name": "Dashboard de Serviços TV",
+  "description": "Dashboard responsivo para TV com 3 colunas verticais (Tabela, Gráficos e Calendário) maximizando espaço sem cabeçalho.",
+  "requestFramePermissions": []
+}
