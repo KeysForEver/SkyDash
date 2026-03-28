@@ -1,20 +1,59 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# SkyDash 🚀
 
-# Run and deploy your AI Studio app
+**SkyDash** é um dashboard em tempo real desenvolvido especificamente para exibição em TVs. Ele fornece uma visão clara e organizada do status de fabricação, instalações e cronograma de serviços, permitindo um acompanhamento ágil e visual da operação.
 
-This contains everything you need to run your app locally.
+## ✨ Funcionalidades
 
-View your app in AI Studio: https://ai.studio/apps/9ad97878-383b-4df9-b8bb-368a1fbf43eb
+- **📅 Calendário de Instalações**: Visualização de 3 meses (anterior, atual e próximo) com indicadores de status coloridos:
+  - 🔴 **Vermelho**: Atrasado (Pendente com data passada).
+  - 🟡 **Amarelo**: Em andamento ou Pendente futuro.
+  - 🟢 **Verde**: Concluído.
+- **📊 Gráficos de Desempenho**: Insights visuais sobre a distribuição de serviços e status de fabricação usando Recharts.
+- **📋 Tabela de Serviços**: Listagem detalhada de todos os serviços ativos, integrando dados de fabricação e instalação.
+- **📂 Integração com Excel**: O sistema lê automaticamente os dados de um arquivo Excel (`SERVIÇOS 22.xlsx`), facilitando a atualização das informações.
+- **📺 Otimizado para TV**: Layout responsivo de 3 colunas verticais que maximiza o espaço da tela, ideal para monitoramento contínuo.
 
-## Run Locally
+## 🛠️ Tecnologias Utilizadas
 
-**Prerequisites:**  Node.js
+- **Frontend**: React, Vite, Tailwind CSS, Recharts, Lucide Icons, date-fns.
+- **Backend**: Express.js, tsx.
+- **Manipulação de Dados**: XLSX (SheetJS).
 
+## 🚀 Como Rodar o Projeto
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Pré-requisitos
+
+- [Node.js](https://nodejs.org/) (v18 ou superior)
+- npm (geralmente instalado com o Node.js)
+
+### Passos para Instalação
+
+1. **Clone o repositório** (ou baixe os arquivos):
+   ```bash
+   git clone <url-do-repositorio>
+   cd skydash
+   ```
+
+2. **Instale as dependências**:
+   ```bash
+   npm install
+   ```
+
+3. **Inicie o servidor de desenvolvimento**:
+   ```bash
+   npm run dev
+   ```
+
+4. **Acesse no navegador**:
+   Abra [http://localhost:3000](http://localhost:3000) para visualizar o dashboard.
+
+## 📂 Estrutura de Dados
+
+O projeto espera um arquivo `.xlsx` na raiz do diretório com as seguintes colunas:
+- `SERVIÇOS`: Nome do serviço/projeto.
+- `STATUS FABRICAÇÃO`: Status atual da produção.
+- `STATUS INSTALAÇÃO`: Status da instalação (PENDENTE, EM ANDAMENTO, CONCLUÍDO).
+- `DATA INSTALAÇÃO`: Data prevista no formato YYYY-MM-DD.
+
+---
+Desenvolvido para facilitar a gestão visual de serviços. 🛠️

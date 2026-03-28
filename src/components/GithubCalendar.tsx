@@ -48,7 +48,6 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
 
   return (
     <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col min-h-0 overflow-hidden">
-      <h3 className="text-sm font-bold text-gray-700 mb-2 uppercase text-center shrink-0">Calendário de Instalações</h3>
       <div className="flex-1 grid grid-rows-3 gap-4 min-h-0">
         {months.map((month, mIdx) => {
           const monthStart = startOfMonth(month);

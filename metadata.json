@@ -1,5 +1,5 @@
 {
-  "name": "Dashboard de Serviços TV",
-  "description": "Dashboard responsivo para TV com 3 colunas verticais (Tabela, Gráficos e Calendário) maximizando espaço sem cabeçalho.",
+  "name": "SkyDash",
+  "description": "SkyDash: Dashboard responsivo para TV com 3 colunas verticais (Tabela, Gráficos e Calendário) para gestão visual de serviços e instalações.",
   "requestFramePermissions": []
 }
