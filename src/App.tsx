@@ -66,7 +66,7 @@ export default function App() {
       {/* Main Content Area */}
       <div className="main-content">
         {/* Column 1: Table */}
-        <div className="flex-[1.5] min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col">
           <DashboardTable data={data} />
         </div>
 

@@ -29,9 +29,9 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
   };
 
   return (
-    <div className="h-full flex flex-col gap-20">
-      <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-20 flex flex-col min-h-0">
-        <h3 className="text-7xl font-black text-gray-900 mb-20 uppercase text-center tracking-tighter">Status Instalação</h3>
+    <div className="h-full flex flex-col gap-2">
+      <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col min-h-0">
+        <h3 className="text-sm font-black text-gray-900 mb-2 uppercase text-center tracking-tighter">Status Instalação</h3>
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -49,14 +49,14 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend verticalAlign="bottom" height={150} iconSize={64} wrapperStyle={{ fontSize: '64px', fontWeight: '900' }}/>
+              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '12px', fontWeight: '900' }}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-20 flex flex-col min-h-0">
-        <h3 className="text-7xl font-black text-gray-900 mb-20 uppercase text-center tracking-tighter">Aguardando vs Em Andamento</h3>
+      <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col min-h-0">
+        <h3 className="text-sm font-black text-gray-900 mb-2 uppercase text-center tracking-tighter">Aguardando vs Em Andamento</h3>
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -74,7 +74,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 ))}
               </Pie>
               <Tooltip />
-              <Legend verticalAlign="bottom" height={150} iconSize={64} wrapperStyle={{ fontSize: '64px', fontWeight: '900' }}/>
+              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '12px', fontWeight: '900' }}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
