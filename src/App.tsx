@@ -27,8 +27,8 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    // Auto-update every 5 minutes
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    // Auto-update every 1 minute
+    const interval = setInterval(fetchData, 1 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -76,7 +76,7 @@ export default function App() {
         </div>
 
         {/* Column 3: Calendar */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col p-1">
           <GithubCalendar data={data} />
         </div>
       </div>

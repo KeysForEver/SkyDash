@@ -47,8 +47,8 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
   const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex-1 grid grid-rows-3 gap-4 min-h-0">
+    <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm p-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="flex-1 grid grid-rows-3 gap-1 min-h-0">
         {months.map((month, mIdx) => {
           const monthStart = startOfMonth(month);
           const monthEnd = endOfMonth(month);
@@ -61,19 +61,20 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
           });
 
           return (
-            <div key={mIdx} className="flex flex-col min-h-0 overflow-hidden">
-              <div className="flex justify-between items-end px-1 mb-1 border-b border-gray-100 pb-1 shrink-0">
-                <span className="text-[10px] uppercase font-black text-gray-400 leading-none">
+            <div key={mIdx} className="flex flex-col min-h-0 overflow-hidden px-0.5">
+              <div className="flex justify-between items-center mb-0 border-b border-gray-100 pb-0 shrink-0">
+                <span className="text-[9px] uppercase font-black text-gray-400 leading-none">
                   {format(month, "MMMM", { locale: ptBR })}
                 </span>
-                <div className="flex gap-0.5">
-                  {weekDays.map((d, i) => (
-                    <span key={i} className="w-4 text-[7px] text-center font-bold text-gray-300">{d}</span>
-                  ))}
-                </div>
               </div>
               
-              <div className="grid grid-cols-7 gap-0.5 flex-1 min-h-0">
+              <div className="grid grid-cols-7 gap-0.5 mb-0 shrink-0">
+                {weekDays.map((d, i) => (
+                  <span key={i} className="text-[6px] text-center font-bold text-gray-300">{d}</span>
+                ))}
+              </div>
+              
+              <div className="grid grid-cols-7 gap-0.5 flex-1 min-h-0 pb-1">
                 {calendarDays.map((day, dIdx) => {
                   const isCurrentMonth = isSameMonth(day, month);
                   const isToday = isSameDay(day, today);
@@ -82,9 +83,9 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
                     <div
                       key={dIdx}
                       className={`
-                        h-full flex items-center justify-center rounded-sm text-[9px] font-bold transition-all
+                        flex items-center justify-center rounded-sm text-[8px] font-bold transition-all min-h-0
                         ${!isCurrentMonth ? "opacity-0 pointer-events-none" : getDayStatus(day)}
-                        ${isToday ? "ring-2 ring-blue-400 ring-offset-1 z-10" : ""}
+                        ${isToday ? "ring-1 ring-blue-400 ring-offset-0 z-10" : ""}
                       `}
                     >
                       {format(day, "d")}

@@ -12,24 +12,18 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Ensure the Excel file exists for demonstration
-  const excelPath = path.join(process.cwd(), "SERVIÇOS 22.xlsx");
-  if (!fs.existsSync(excelPath)) {
-    const wb = utils.book_new();
-    const data = [
-      ["SERVIÇOS", "STATUS FABRICAÇÃO", "STATUS INSTALAÇÃO", "DATA INSTALAÇÃO"],
-      ["Cozinha Planejada", "CONCLUÍDO", "CONCLUÍDO", "2026-03-20"],
-      ["Armário Quarto", "EM ANDAMENTO", "PENDENTE", "2026-03-28"],
-      ["Painel TV", "AGUARDANDO PROJETO", "PENDENTE", "2026-04-05"],
-      ["Mesa Escritório", "CONCLUÍDO", "EM ANDAMENTO", "2026-03-25"],
-      ["Prateleiras", "EM ANDAMENTO", "PENDENTE", "2026-03-15"], // Atrasado
-      ["Balcão Banheiro", "CONCLUÍDO", "CONCLUÍDO", "2026-02-10"],
-      ["Closet", "AGUARDANDO PROJETO", "PENDENTE", "2026-05-01"],
-    ];
-    const ws = utils.aoa_to_sheet(data);
-    utils.book_append_sheet(wb, ws, "Serviços");
-    writeFile(wb, excelPath);
-  }
+  // Helper to find any .xlsx file in the public or dist directory
+  const getExcelPath = () => {
+    const searchDir = process.env.NODE_ENV === "production" 
+      ? path.join(process.cwd(), "dist")
+      : path.join(process.cwd(), "public");
+    
+    if (!fs.existsSync(searchDir)) return null;
+    
+    const files = fs.readdirSync(searchDir);
+    const excelFile = files.find(f => f.endsWith(".xlsx"));
+    return excelFile ? path.join(searchDir, excelFile) : null;
+  };
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
@@ -37,6 +31,10 @@ async function startServer() {
 
   app.get("/api/data", (req, res) => {
     try {
+      const excelPath = getExcelPath();
+      if (!excelPath || !fs.existsSync(excelPath)) {
+        return res.status(404).json({ error: "Excel file not found" });
+      }
       const workbook = readFile(excelPath);
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
