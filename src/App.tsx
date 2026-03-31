@@ -4,6 +4,7 @@ import { DashboardCharts } from "./components/DashboardCharts";
 import { GithubCalendar } from "./components/GithubCalendar";
 import { Servico } from "./types";
 import { Loader2, AlertCircle } from "lucide-react";
+import * as XLSX from "xlsx";
 
 export default function App() {
   const [data, setData] = useState<Servico[]>([]);
@@ -12,23 +13,50 @@ export default function App() {
 
   const fetchData = async () => {
     try {
-      const response = await fetch("/api/data");
-      if (!response.ok) throw new Error("Falha ao carregar dados");
-      const jsonData = await response.json();
-      setData(jsonData);
-      setError(null);
+      // Try to fetch the Excel file directly from the root
+      // The user should place the file in the public folder or dist folder
+      const response = await fetch("/Serviços.xlsx");
+      if (!response.ok) {
+        // Try fallback names if the exact one isn't found
+        const fallbackResponse = await fetch("/SERVIÇOS 22.xlsx");
+        if (!fallbackResponse.ok) throw new Error("Arquivo Excel não encontrado no servidor.");
+        return processExcel(await fallbackResponse.arrayBuffer());
+      }
+      await processExcel(await response.arrayBuffer());
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Erro ao carregar os dados da planilha.");
+      setError("Erro ao carregar os dados da planilha. Verifique se o arquivo 'Serviços.xlsx' está na pasta.");
     } finally {
       setLoading(false);
     }
   };
 
+  const processExcel = async (buffer: ArrayBuffer) => {
+    const workbook = XLSX.read(buffer, { cellDates: true });
+    const sheetName = workbook.SheetNames[0];
+    const worksheet = workbook.Sheets[sheetName];
+    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+    // Normalize keys (same logic as the server had)
+    const normalizedData = jsonData.map((row: any) => {
+      const newRow: any = {};
+      for (const key in row) {
+        const cleanKey = key.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
+                            .trim()
+                            .replace(/\s+/g, ' ');
+        newRow[cleanKey] = row[key];
+      }
+      return newRow;
+    });
+
+    setData(normalizedData as Servico[]);
+    setError(null);
+  };
+
   useEffect(() => {
     fetchData();
-    // Auto-update every 1 minute
-    const interval = setInterval(fetchData, 1 * 60 * 1000);
+    // Auto-update every 5 minutes (less frequent for direct file fetch)
+    const interval = setInterval(fetchData, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
