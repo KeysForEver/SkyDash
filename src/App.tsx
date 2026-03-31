@@ -62,21 +62,21 @@ export default function App() {
   }
 
   return (
-    <main className="dashboard-container">
+    <main className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Main Content Area */}
-      <div className="main-content">
-        {/* Column 1: Table */}
-        <div className="flex-1 min-w-0 flex flex-col">
+      <div className="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden">
+        {/* Column 1: Table (1/3) */}
+        <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
           <DashboardTable data={data} />
         </div>
 
-        {/* Column 2: Charts */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        {/* Column 2: Charts (1/3) */}
+        <div className="flex-1 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
           <DashboardCharts data={data} />
         </div>
 
-        {/* Column 3: Calendar */}
-        <div className="flex-1 min-w-0 flex flex-col p-1">
+        {/* Column 3: Calendar (1/3) */}
+        <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
           <GithubCalendar data={data} />
         </div>
       </div>

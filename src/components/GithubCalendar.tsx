@@ -1,7 +1,8 @@
 import React from "react";
-import { format, addMonths, subMonths, eachDayOfInterval, startOfMonth, endOfMonth, isSameDay, isBefore, parseISO, startOfWeek, endOfWeek, isSameMonth } from "date-fns";
-import { ptBR } from "date-fns/locale";
 import { Servico } from "../types";
+import { cn } from "../lib/utils";
+import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths, startOfWeek, endOfWeek } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 interface Props {
   data: Servico[];
@@ -9,93 +10,74 @@ interface Props {
 
 export const GithubCalendar: React.FC<Props> = ({ data }) => {
   const today = new Date();
-  const startDate = startOfMonth(subMonths(today, 1));
-  const endDate = endOfMonth(addMonths(today, 1));
+  const months = [
+    subMonths(today, 1),
+    today,
+    addMonths(today, 1)
+  ];
 
-  const getDayStatus = (day: Date) => {
-    const servicesOnDay = data.filter(s => {
-      if (!s["DATA INSTALAÇÃO"]) return false;
-      const serviceDate = parseISO(s["DATA INSTALAÇÃO"]);
-      return isSameDay(serviceDate, day);
+  const getDayStatus = (date: Date) => {
+    const servicesOnDay = data.filter(item => {
+      if (!item["DATA INSTALAÇÃO"]) return false;
+      // Simple date parsing for "YYYY-MM-DD" or similar
+      const itemDate = new Date(item["DATA INSTALAÇÃO"]);
+      return isSameDay(itemDate, date);
     });
 
-    if (servicesOnDay.length === 0) return "bg-gray-50 text-gray-400";
+    if (servicesOnDay.length === 0) return null;
 
-    const hasLate = servicesOnDay.some(s => 
-      s["STATUS INSTALAÇÃO"].toUpperCase() === "PENDENTE" && isBefore(parseISO(s["DATA INSTALAÇÃO"]), today)
-    );
-    const hasInProgress = servicesOnDay.some(s => 
-      s["STATUS INSTALAÇÃO"].toUpperCase() === "EM ANDAMENTO" || 
-      (s["STATUS INSTALAÇÃO"].toUpperCase() === "PENDENTE" && !isBefore(parseISO(s["DATA INSTALAÇÃO"]), today))
-    );
-    const allDone = servicesOnDay.every(s => s["STATUS INSTALAÇÃO"].toUpperCase() === "CONCLUÍDO");
-
-    if (hasLate) return "bg-[var(--google-red)] text-white";
-    if (allDone) return "bg-[var(--google-green)] text-white";
-    if (hasInProgress) return "bg-[var(--google-yellow)] text-gray-800";
+    const statuses = servicesOnDay.map(s => (s["STATUS INSTALAÇÃO"] || "").toUpperCase().trim());
     
-    return "bg-gray-300 text-gray-600";
+    if (statuses.every(s => s === "CONCLUÍDO")) return "bg-[var(--google-green)]";
+    if (statuses.some(s => s === "EM ANDAMENTO")) return "bg-[var(--google-yellow)]";
+    return "bg-[var(--google-red)]";
   };
 
-  const months = [];
-  let current = startDate;
-  while (isBefore(current, endDate)) {
-    months.push(current);
-    current = addMonths(current, 1);
-  }
+  const renderMonth = (monthDate: Date) => {
+    const start = startOfMonth(monthDate);
+    const end = endOfMonth(monthDate);
+    
+    // To align correctly in a grid, we might need padding days from start of week
+    const calendarStart = startOfWeek(start, { weekStartsOn: 0 });
+    const calendarEnd = endOfWeek(end, { weekStartsOn: 0 });
+    const allDays = eachDayOfInterval({ start: calendarStart, end: calendarEnd });
 
-  const weekDays = ["D", "S", "T", "Q", "Q", "S", "S"];
+    return (
+      <div key={monthDate.toISOString()} className="flex flex-col gap-1 bg-gray-50/50 p-2 rounded-lg">
+        <h4 className="text-[11px] font-black text-gray-500 uppercase mb-2 border-b border-gray-200 pb-1 flex justify-between items-center">
+          <span>{format(monthDate, "MMMM", { locale: ptBR })}</span>
+          <span className="text-[9px] opacity-60">{format(monthDate, "yyyy")}</span>
+        </h4>
+        <div className="grid grid-cols-7 gap-1">
+          {["D", "S", "T", "Q", "Q", "S", "S"].map((d, idx) => (
+            <div key={idx} className="w-5 h-5 flex items-center justify-center text-[9px] font-black text-gray-400">{d}</div>
+          ))}
+          {allDays.map((day, i) => {
+            const isCurrentMonth = day.getMonth() === monthDate.getMonth();
+            const statusClass = isCurrentMonth ? getDayStatus(day) : null;
+            
+            return (
+              <div
+                key={i}
+                className={cn(
+                  "w-5 h-5 rounded-sm transition-all duration-300 flex items-center justify-center text-[8px] font-bold",
+                  !isCurrentMonth ? "opacity-0 pointer-events-none" : (statusClass || "bg-white border border-gray-100 text-gray-300")
+                )}
+                title={isCurrentMonth ? format(day, "dd/MM/yyyy") : ""}
+              >
+                {isCurrentMonth && day.getDate()}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  };
 
   return (
-    <div className="h-full bg-white border border-gray-200 rounded-xl shadow-sm p-1 flex flex-col min-h-0 overflow-hidden">
-      <div className="flex-1 grid grid-rows-3 gap-1 min-h-0">
-        {months.map((month, mIdx) => {
-          const monthStart = startOfMonth(month);
-          const monthEnd = endOfMonth(month);
-          const calendarStart = startOfWeek(monthStart, { locale: ptBR });
-          const calendarEnd = endOfWeek(monthEnd, { locale: ptBR });
-          
-          const calendarDays = eachDayOfInterval({
-            start: calendarStart,
-            end: calendarEnd
-          });
-
-          return (
-            <div key={mIdx} className="flex flex-col min-h-0 overflow-hidden px-0.5">
-              <div className="flex justify-between items-center mb-0 border-b border-gray-100 pb-0 shrink-0">
-                <span className="text-[9px] uppercase font-black text-gray-400 leading-none">
-                  {format(month, "MMMM", { locale: ptBR })}
-                </span>
-              </div>
-              
-              <div className="grid grid-cols-7 gap-0.5 mb-0 shrink-0">
-                {weekDays.map((d, i) => (
-                  <span key={i} className="text-[6px] text-center font-bold text-gray-300">{d}</span>
-                ))}
-              </div>
-              
-              <div className="grid grid-cols-7 gap-0.5 flex-1 min-h-0 pb-1">
-                {calendarDays.map((day, dIdx) => {
-                  const isCurrentMonth = isSameMonth(day, month);
-                  const isToday = isSameDay(day, today);
-                  
-                  return (
-                    <div
-                      key={dIdx}
-                      className={`
-                        flex items-center justify-center rounded-sm text-[8px] font-bold transition-all min-h-0
-                        ${!isCurrentMonth ? "opacity-0 pointer-events-none" : getDayStatus(day)}
-                        ${isToday ? "ring-1 ring-blue-400 ring-offset-0 z-10" : ""}
-                      `}
-                    >
-                      {format(day, "d")}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })}
+    <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-4 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col gap-6 overflow-y-auto pr-1 scrollbar-hide">
+        {months.map(renderMonth)}
       </div>
     </div>
   );

@@ -7,26 +7,28 @@ interface Props {
 }
 
 export const DashboardCharts: React.FC<Props> = ({ data }) => {
-  // Chart 1: STATUS INSTALAÇÃO (Pendente vs Concluído)
-  const instalacaoData = [
-    { name: "Pendente", value: data.filter(s => s["STATUS INSTALAÇÃO"].toUpperCase() === "PENDENTE").length },
-    { name: "Concluído", value: data.filter(s => s["STATUS INSTALAÇÃO"].toUpperCase() === "CONCLUÍDO").length },
-    { name: "Em Andamento", value: data.filter(s => s["STATUS INSTALAÇÃO"].toUpperCase() === "EM ANDAMENTO").length },
-  ].filter(d => d.value > 0);
-
-  // Chart 2: AGUARDANDO PROJETO (FABRICAÇÃO) vs EM ANDAMENTO (INSTALAÇÃO)
-  const comparativoData = [
-    { name: "Aguardando Projeto", value: data.filter(s => s["STATUS FABRICAÇÃO"].toUpperCase() === "AGUARDANDO PROJETO").length },
-    { name: "Em Andamento (Inst.)", value: data.filter(s => s["STATUS INSTALAÇÃO"].toUpperCase() === "EM ANDAMENTO").length },
-  ].filter(d => d.value > 0);
-
-  const COLORS = {
-    "Pendente": "#EA4335",
-    "Concluído": "#34A853",
-    "Em Andamento": "#FBBC05",
-    "Aguardando Projeto": "#EA4335",
-    "Em Andamento (Inst.)": "#FBBC05",
+  // Chart 1: STATUS INSTALAÇÃO
+  const getStatusCounts = (field: keyof Servico) => {
+    const counts: Record<string, number> = {};
+    data.forEach(item => {
+      const status = (item[field] as string || "PENDENTE").trim().toUpperCase() || "PENDENTE";
+      counts[status] = (counts[status] || 0) + 1;
+    });
+    return Object.entries(counts).map(([name, value]) => ({ name, value }));
   };
+
+  const instalacaoData = getStatusCounts("STATUS INSTALAÇÃO");
+  const fabricacaoData = getStatusCounts("STATUS FABRICAÇÃO");
+
+  const COLORS: Record<string, string> = {
+    "CONCLUÍDO": "#34A853",
+    "EM ANDAMENTO": "#FBBC05",
+    "PENDENTE": "#EA4335",
+    "AGUARDANDO PROJETO": "#EA4335",
+    "AGUARDANDO INSTALAÇÃO": "#FBBC05",
+  };
+
+  const getColor = (name: string) => COLORS[name] || "#9CA3AF";
 
   return (
     <div className="h-full flex flex-col gap-2">
@@ -45,23 +47,23 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 dataKey="value"
               >
                 {instalacaoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || "#8884d8"} />
+                  <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
                 ))}
               </Pie>
               <Tooltip />
-              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '12px', fontWeight: '900' }}/>
+              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '10px', fontWeight: '900' }}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
       </div>
 
       <div className="flex-1 bg-white border border-gray-200 rounded-xl shadow-sm p-3 flex flex-col min-h-0">
-        <h3 className="text-sm font-black text-gray-900 mb-2 uppercase text-center tracking-tighter">Aguardando vs Em Andamento</h3>
+        <h3 className="text-sm font-black text-gray-900 mb-2 uppercase text-center tracking-tighter">Status Fabricação</h3>
         <div className="flex-1 min-h-0">
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={comparativoData}
+                data={fabricacaoData}
                 cx="50%"
                 cy="50%"
                 innerRadius="40%"
@@ -69,12 +71,12 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 paddingAngle={5}
                 dataKey="value"
               >
-                {comparativoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS] || "#8884d8"} />
+                {fabricacaoData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
                 ))}
               </Pie>
               <Tooltip />
-              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '12px', fontWeight: '900' }}/>
+              <Legend verticalAlign="bottom" height={30} iconSize={12} wrapperStyle={{ fontSize: '10px', fontWeight: '900' }}/>
             </PieChart>
           </ResponsiveContainer>
         </div>
