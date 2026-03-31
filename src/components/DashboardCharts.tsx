@@ -20,40 +20,21 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
   const instalacaoData = getStatusCounts("STATUS INSTALAÇÃO");
   const fabricacaoData = getStatusCounts("STATUS FABRICAÇÃO");
 
-  const getChartColors = (chartData: { name: string; value: number }[]) => {
-    const SEMANTIC: Record<string, string> = {
-      "CONCLUÍDO": "#34A853", // Google Green
-      "ATRASADO": "#EA4335",  // Google Red
-      "CANCELADO": "#70757a", // Gray
-    };
-
-    const PALETTE = [
-      "#4285F4", // Google Blue
-      "#FBBC05", // Google Yellow
-      "#A142F4", // Google Purple
-      "#24C1E0", // Google Cyan
-      "#FA7B17", // Google Orange
-      "#F06292", // Pink
-      "#009688", // Teal
-      "#3F51B5", // Indigo
-      "#FF5722", // Deep Orange
-      "#607D8B", // Blue Gray
-    ];
-
-    // Filter palette to remove colors used in semantic mapping to prevent duplicates
-    const semanticValues = new Set(Object.values(SEMANTIC));
-    const availablePalette = PALETTE.filter(c => !semanticValues.has(c));
-
-    let paletteIdx = 0;
-    return chartData.map(item => {
-      const name = item.name.toUpperCase().trim();
-      if (SEMANTIC[name]) return SEMANTIC[name];
-      return availablePalette[paletteIdx++ % availablePalette.length];
-    });
-  };
-
-  const instalacaoColors = getChartColors(instalacaoData);
-  const fabricacaoColors = getChartColors(fabricacaoData);
+  const PALETTE = [
+    "#EA4335", // Red (First)
+    "#FBBC05", // Yellow (Second)
+    "#4285F4", // Blue (Third)
+    "#A142F4", // Purple
+    "#24C1E0", // Cyan
+    "#FA7B17", // Orange
+    "#F06292", // Pink
+    "#009688", // Teal
+    "#3F51B5", // Indigo
+    "#FF5722", // Deep Orange
+    "#607D8B", // Blue Gray
+    "#70757a", // Gray
+    "#34A853", // Green (Last)
+  ];
 
   return (
     <div className="h-full flex flex-col gap-2">
@@ -72,7 +53,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 dataKey="value"
               >
                 {instalacaoData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={instalacaoColors[index]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
                 ))}
               </Pie>
               <Tooltip />
@@ -97,7 +78,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 dataKey="value"
               >
                 {fabricacaoData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={fabricacaoColors[index]} />
+                  <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
                 ))}
               </Pie>
               <Tooltip />
