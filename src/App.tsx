@@ -5,12 +5,14 @@ import { GithubCalendar } from "./components/GithubCalendar";
 import { Servico } from "./types";
 import { Loader2, AlertCircle, Upload, Play } from "lucide-react";
 import * as XLSX from "xlsx";
+import { addMonths, subMonths } from "date-fns";
 
 export default function App() {
   const [data, setData] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const today = new Date();
 
   const fetchData = async () => {
     try {
@@ -212,14 +214,19 @@ export default function App() {
     <main className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden">
-        {/* Column 1: Charts (1/3) */}
+        {/* Column 1: Charts + Previous Month Calendar (1/3) */}
         <div className="w-1/3 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
-          <DashboardCharts data={data} />
+          <div className="h-1/2 min-h-0">
+            <DashboardCharts data={data} />
+          </div>
+          <div className="h-1/2 min-h-0">
+            <GithubCalendar data={data} months={[subMonths(today, 1)]} />
+          </div>
         </div>
 
-        {/* Column 2: Calendar (2/3) */}
+        {/* Column 2: Current and Next Month Calendar (2/3) */}
         <div className="w-2/3 min-w-0 flex flex-col h-full overflow-hidden">
-          <GithubCalendar data={data} />
+          <GithubCalendar data={data} months={[today, addMonths(today, 1)]} />
         </div>
       </div>
     </main>

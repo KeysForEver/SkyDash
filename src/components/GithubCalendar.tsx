@@ -6,11 +6,12 @@ import { ptBR } from "date-fns/locale";
 
 interface Props {
   data: Servico[];
+  months?: Date[];
 }
 
-export const GithubCalendar: React.FC<Props> = ({ data }) => {
+export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths }) => {
   const today = new Date();
-  const months = [
+  const months = customMonths || [
     today,
     addMonths(today, 1)
   ];
@@ -112,7 +113,7 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
 
   return (
     <div className="flex-1 flex flex-col gap-4 overflow-hidden h-full">
-      <div className="flex-1 grid grid-cols-2 gap-4 min-h-0 h-full">
+      <div className={cn("flex-1 grid gap-4 min-h-0 h-full", months.length === 1 ? "grid-cols-1" : "grid-cols-2")}>
         {months.map(renderMonth)}
       </div>
     </div>
