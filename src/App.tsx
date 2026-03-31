@@ -16,41 +16,68 @@ export default function App() {
       // Try to fetch the Excel file directly from the root
       // The user should place the file in the public folder or dist folder
       const response = await fetch("/Serviços.xlsx");
-      if (!response.ok) {
-        // Try fallback names if the exact one isn't found
-        const fallbackResponse = await fetch("/SERVIÇOS 22.xlsx");
-        if (!fallbackResponse.ok) throw new Error("Arquivo Excel não encontrado no servidor.");
-        return processExcel(await fallbackResponse.arrayBuffer());
+      
+      // Check if response is OK AND not an HTML page (common in SPA fallbacks)
+      const contentType = response.headers.get("content-type");
+      if (response.ok && contentType && !contentType.includes("text/html")) {
+        return await processExcel(await response.arrayBuffer());
       }
-      await processExcel(await response.arrayBuffer());
+
+      // Try fallback names if the first one fails or returns HTML
+      const fallbackResponse = await fetch("/SERVIÇOS 22.xlsx");
+      const fallbackContentType = fallbackResponse.headers.get("content-type");
+      
+      if (fallbackResponse.ok && fallbackContentType && !fallbackContentType.includes("text/html")) {
+        return await processExcel(await fallbackResponse.arrayBuffer());
+      }
+
+      throw new Error("Arquivo Excel não encontrado ou o servidor retornou uma página HTML em vez do arquivo.");
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Erro ao carregar os dados da planilha. Verifique se o arquivo 'Serviços.xlsx' está na pasta.");
+      setError("Erro ao carregar os dados da planilha. Verifique se o arquivo 'Serviços.xlsx' está na pasta dist.");
     } finally {
       setLoading(false);
     }
   };
 
   const processExcel = async (buffer: ArrayBuffer) => {
-    const workbook = XLSX.read(buffer, { cellDates: true });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
-
-    // Normalize keys (same logic as the server had)
-    const normalizedData = jsonData.map((row: any) => {
-      const newRow: any = {};
-      for (const key in row) {
-        const cleanKey = key.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
-                            .trim()
-                            .replace(/\s+/g, ' ');
-        newRow[cleanKey] = row[key];
+    try {
+      // Basic check: if the buffer starts with '<!DOCTYPE' or '<html>', it's HTML
+      const decoder = new TextDecoder();
+      const preview = decoder.decode(buffer.slice(0, 100));
+      if (preview.trim().toLowerCase().startsWith("<!doctype") || preview.trim().toLowerCase().startsWith("<html")) {
+        throw new Error("O servidor retornou um arquivo HTML em vez de um Excel. Verifique se o arquivo existe na pasta.");
       }
-      return newRow;
-    });
 
-    setData(normalizedData as Servico[]);
-    setError(null);
+      const workbook = XLSX.read(buffer, { cellDates: true });
+      if (!workbook.SheetNames.length) throw new Error("A planilha está vazia ou é inválida.");
+      
+      const sheetName = workbook.SheetNames[0];
+      const worksheet = workbook.Sheets[sheetName];
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+
+      if (!Array.isArray(jsonData) || jsonData.length === 0) {
+        console.warn("Nenhum dado encontrado na primeira aba da planilha.");
+      }
+
+      // Normalize keys (same logic as the server had)
+      const normalizedData = jsonData.map((row: any) => {
+        const newRow: any = {};
+        for (const key in row) {
+          const cleanKey = key.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
+                              .trim()
+                              .replace(/\s+/g, ' ');
+          newRow[cleanKey] = row[key];
+        }
+        return newRow;
+      });
+
+      setData(normalizedData as Servico[]);
+      setError(null);
+    } catch (err: any) {
+      console.error("Processing error:", err);
+      throw new Error(err.message || "Erro ao processar o arquivo Excel.");
+    }
   };
 
   useEffect(() => {
