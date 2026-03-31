@@ -1,43 +1,98 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { DashboardTable } from "./components/DashboardTable";
 import { DashboardCharts } from "./components/DashboardCharts";
 import { GithubCalendar } from "./components/GithubCalendar";
 import { Servico } from "./types";
-import { Loader2, AlertCircle } from "lucide-react";
+import { Loader2, AlertCircle, Upload, Play } from "lucide-react";
 import * as XLSX from "xlsx";
 
 export default function App() {
   const [data, setData] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const fetchData = async () => {
     try {
+      setLoading(true);
       // Try to fetch the Excel file directly from the root
-      // The user should place the file in the public folder or dist folder
       const response = await fetch("/Serviços.xlsx");
       
       // Check if response is OK AND not an HTML page (common in SPA fallbacks)
       const contentType = response.headers.get("content-type");
       if (response.ok && contentType && !contentType.includes("text/html")) {
-        return await processExcel(await response.arrayBuffer());
+        await processExcel(await response.arrayBuffer());
+        return;
       }
 
-      // Try fallback names if the first one fails or returns HTML
+      // Try fallback names
       const fallbackResponse = await fetch("/SERVIÇOS 22.xlsx");
       const fallbackContentType = fallbackResponse.headers.get("content-type");
       
       if (fallbackResponse.ok && fallbackContentType && !fallbackContentType.includes("text/html")) {
-        return await processExcel(await fallbackResponse.arrayBuffer());
+        await processExcel(await fallbackResponse.arrayBuffer());
+        return;
       }
 
-      throw new Error("Arquivo Excel não encontrado ou o servidor retornou uma página HTML em vez do arquivo.");
+      throw new Error("Arquivo Excel não encontrado no servidor.");
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Erro ao carregar os dados da planilha. Verifique se o arquivo 'Serviços.xlsx' está na pasta dist.");
+      setError("Arquivo 'Serviços.xlsx' não encontrado. Você pode carregar o arquivo manualmente ou usar dados de demonstração.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        setLoading(true);
+        const buffer = event.target?.result as ArrayBuffer;
+        await processExcel(buffer);
+      } catch (err: any) {
+        setError(err.message || "Erro ao processar o arquivo enviado.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  const loadDemoData = () => {
+    const demoData: Servico[] = [
+      {
+        "DATA": "2026-03-31",
+        "SERVIÇOS": "PROJETO DEMO 01",
+        "FABRICAÇÃO (RESPONSÁVEL)": "EQUIPE A",
+        "STATUS FABRICAÇÃO": "CONCLUÍDO",
+        "PINTURA": "ELETROSTÁTICA",
+        "STATUS PINTURA": "CONCLUÍDO",
+        "MÁQUINA": "ROUTER",
+        "STATUS MÁQUINA": "CONCLUÍDO",
+        "INSTALADOR": "DIEGO",
+        "STATUS INSTALAÇÃO": "CONCLUÍDO",
+        "OBSERVAÇÕES": "DADOS DE EXEMPLO"
+      },
+      {
+        "DATA": "2026-04-05",
+        "SERVIÇOS": "PROJETO DEMO 02",
+        "FABRICAÇÃO (RESPONSÁVEL)": "EQUIPE B",
+        "STATUS FABRICAÇÃO": "EM ANDAMENTO",
+        "PINTURA": "N/A",
+        "STATUS PINTURA": "PENDENTE",
+        "MÁQUINA": "LASER",
+        "STATUS MÁQUINA": "EM ANDAMENTO",
+        "INSTALADOR": "CARLOS",
+        "STATUS INSTALAÇÃO": "PENDENTE",
+        "OBSERVAÇÕES": "DADOS DE EXEMPLO"
+      }
+    ];
+    setData(demoData);
+    setError(null);
   };
 
   const processExcel = async (buffer: ArrayBuffer) => {
@@ -46,7 +101,7 @@ export default function App() {
       const decoder = new TextDecoder();
       const preview = decoder.decode(buffer.slice(0, 100));
       if (preview.trim().toLowerCase().startsWith("<!doctype") || preview.trim().toLowerCase().startsWith("<html")) {
-        throw new Error("O servidor retornou um arquivo HTML em vez de um Excel. Verifique se o arquivo existe na pasta.");
+        throw new Error("O servidor retornou um arquivo HTML em vez de um Excel.");
       }
 
       const workbook = XLSX.read(buffer, { cellDates: true });
@@ -60,13 +115,13 @@ export default function App() {
         console.warn("Nenhum dado encontrado na primeira aba da planilha.");
       }
 
-      // Normalize keys (same logic as the server had)
+      // Normalize keys
       const normalizedData = jsonData.map((row: any) => {
         const newRow: any = {};
         for (const key in row) {
           const cleanKey = key.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
-                              .trim()
-                              .replace(/\s+/g, ' ');
+                            .trim()
+                            .replace(/\s+/g, ' ');
           newRow[cleanKey] = row[key];
         }
         return newRow;
@@ -82,8 +137,10 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    // Auto-update every 5 minutes (less frequent for direct file fetch)
-    const interval = setInterval(fetchData, 5 * 60 * 1000);
+    // Auto-update every 5 minutes if data was fetched from server
+    const interval = setInterval(() => {
+      if (!error && data.length > 0) fetchData();
+    }, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
 
@@ -101,16 +158,51 @@ export default function App() {
   if (error) {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-white">
-        <div className="flex flex-col items-center gap-4 text-center max-w-md">
+        <div className="flex flex-col items-center gap-6 text-center max-w-lg p-8">
           <AlertCircle className="w-16 h-16 text-[var(--google-red)]" />
-          <h1 className="text-2xl font-bold text-gray-800">Ops! Algo deu errado</h1>
-          <p className="text-gray-600">{error}</p>
-          <button 
-            onClick={fetchData}
-            className="mt-4 px-6 py-2 bg-[var(--google-blue)] text-white rounded-lg font-semibold hover:opacity-90 transition-opacity"
-          >
-            Tentar Novamente
-          </button>
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold text-gray-800">Arquivo não encontrado</h1>
+            <p className="text-gray-600 leading-relaxed">{error}</p>
+          </div>
+          
+          <div className="flex flex-col w-full gap-3">
+            <button 
+              onClick={() => fileInputRef.current?.click()}
+              className="flex items-center justify-center gap-2 w-full px-6 py-3 bg-[var(--google-blue)] text-white rounded-xl font-bold hover:opacity-90 transition-all shadow-lg shadow-blue-100"
+            >
+              <Upload className="w-5 h-5" />
+              Carregar Planilha Manualmente
+            </button>
+            
+            <input 
+              type="file" 
+              ref={fileInputRef} 
+              onChange={handleFileUpload} 
+              accept=".xlsx, .xls" 
+              className="hidden" 
+            />
+
+            <div className="flex gap-3">
+              <button 
+                onClick={loadDemoData}
+                className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-200 text-gray-700 rounded-xl font-bold hover:bg-gray-50 transition-all"
+              >
+                <Play className="w-5 h-5" />
+                Ver Demonstração
+              </button>
+              
+              <button 
+                onClick={fetchData}
+                className="flex-1 px-6 py-3 bg-gray-100 text-gray-600 rounded-xl font-bold hover:bg-gray-200 transition-all"
+              >
+                Tentar Novamente
+              </button>
+            </div>
+          </div>
+
+          <p className="text-xs text-gray-400 mt-4">
+            Para carregamento automático, coloque o arquivo <code className="bg-gray-100 px-1 rounded">Serviços.xlsx</code> na pasta <code className="bg-gray-100 px-1 rounded">public</code> ou <code className="bg-gray-100 px-1 rounded">dist</code>.
+          </p>
         </div>
       </div>
     );
@@ -120,18 +212,13 @@ export default function App() {
     <main className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden">
-        {/* Column 1: Table (1/3) */}
-        <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
-          <DashboardTable data={data} />
-        </div>
-
-        {/* Column 2: Charts (1/3) */}
-        <div className="flex-1 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
+        {/* Column 1: Charts (1/3) */}
+        <div className="w-1/3 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
           <DashboardCharts data={data} />
         </div>
 
-        {/* Column 3: Calendar (1/3) */}
-        <div className="flex-1 min-w-0 flex flex-col h-full overflow-hidden">
+        {/* Column 2: Calendar (2/3) */}
+        <div className="w-2/3 min-w-0 flex flex-col h-full overflow-hidden">
           <GithubCalendar data={data} />
         </div>
       </div>

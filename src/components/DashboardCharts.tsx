@@ -21,9 +21,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
   const fabricacaoData = getStatusCounts("STATUS FABRICAÇÃO");
 
   const PALETTE = [
-    "#EA4335", // Red (First)
-    "#FBBC05", // Yellow (Second)
-    "#4285F4", // Blue (Third)
+    "#4285F4", // Blue
     "#A142F4", // Purple
     "#24C1E0", // Cyan
     "#FA7B17", // Orange
@@ -33,8 +31,15 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
     "#FF5722", // Deep Orange
     "#607D8B", // Blue Gray
     "#70757a", // Gray
-    "#34A853", // Green (Last)
   ];
+
+  const getStatusColor = (statusName: string, index: number) => {
+    const s = statusName.trim().toUpperCase();
+    if (s === "CONCLUÍDO") return "#34A853"; // Green
+    if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return "#FBBC05"; // Yellow
+    if (s === "ATRASADO") return "#EA4335"; // Red
+    return PALETTE[index % PALETTE.length];
+  };
 
   return (
     <div className="h-full flex flex-col gap-2">
@@ -52,8 +57,8 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 paddingAngle={5}
                 dataKey="value"
               >
-                {instalacaoData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                {instalacaoData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index)} />
                 ))}
               </Pie>
               <Tooltip />
@@ -77,8 +82,8 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 paddingAngle={5}
                 dataKey="value"
               >
-                {fabricacaoData.map((_, index) => (
-                  <Cell key={`cell-${index}`} fill={PALETTE[index % PALETTE.length]} />
+                {fabricacaoData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index)} />
                 ))}
               </Pie>
               <Tooltip />
