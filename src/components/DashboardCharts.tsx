@@ -8,10 +8,10 @@ interface Props {
 
 export const DashboardCharts: React.FC<Props> = ({ data }) => {
   // Chart 1: STATUS INSTALAÇÃO
-  const getStatusCounts = (field: keyof Servico) => {
+  const getStatusCounts = (field: string) => {
     const counts: Record<string, number> = {};
     data.forEach(item => {
-      const status = (item[field] as string || "PENDENTE").trim().toUpperCase() || "PENDENTE";
+      const status = (item[field as keyof Servico] as string || "PENDENTE").trim().toUpperCase() || "PENDENTE";
       counts[status] = (counts[status] || 0) + 1;
     });
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
