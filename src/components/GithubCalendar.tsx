@@ -21,8 +21,15 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
       const dateVal = item["DATA INSTALAÇÃO"] || item["DATA"];
       if (!dateVal) return false;
       
-      let itemDate: Date;
-      if (typeof dateVal === "string" && dateVal.includes("/")) {
+      let itemDate: Date | null = null;
+
+      if (dateVal instanceof Date) {
+        itemDate = dateVal;
+      } else if (typeof dateVal === "number") {
+        // Excel serial date
+        const excelEpoch = new Date(1899, 11, 30);
+        itemDate = new Date(excelEpoch.getTime() + dateVal * 86400000);
+      } else if (typeof dateVal === "string" && dateVal.includes("/")) {
         // Handle DD/MM/YYYY
         const parts = dateVal.split("/");
         if (parts.length === 3) {
@@ -30,10 +37,10 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
           const month = parseInt(parts[1], 10);
           const year = parseInt(parts[2], 10);
           itemDate = new Date(year, month - 1, day);
-        } else {
-          itemDate = new Date(dateVal);
         }
-      } else {
+      }
+
+      if (!itemDate || isNaN(itemDate.getTime())) {
         itemDate = new Date(dateVal);
       }
       
@@ -44,9 +51,12 @@ export const GithubCalendar: React.FC<Props> = ({ data }) => {
 
     const statuses = servicesOnDay.map(s => (s["STATUS INSTALAÇÃO"] || "").toUpperCase().trim());
     
+    // Priority: ATRASADO (Red) > PENDENTE/EM ANDAMENTO (Yellow) > CONCLUÍDO (Green)
+    if (statuses.some(s => s === "ATRASADO")) return "bg-[var(--google-red)]";
+    if (statuses.some(s => s === "PENDENTE" || s === "EM ANDAMENTO")) return "bg-[var(--google-yellow)]";
     if (statuses.every(s => s === "CONCLUÍDO")) return "bg-[var(--google-green)]";
-    if (statuses.some(s => s === "EM ANDAMENTO")) return "bg-[var(--google-yellow)]";
-    return "bg-[var(--google-red)]";
+    
+    return "bg-[var(--google-red)]"; // Fallback for other non-concluded statuses
   };
 
   const renderMonth = (monthDate: Date) => {

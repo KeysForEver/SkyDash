@@ -20,15 +20,30 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
   const instalacaoData = getStatusCounts("STATUS INSTALAÇÃO");
   const fabricacaoData = getStatusCounts("STATUS FABRICAÇÃO");
 
-  const COLORS: Record<string, string> = {
-    "CONCLUÍDO": "#34A853",
-    "EM ANDAMENTO": "#FBBC05",
-    "PENDENTE": "#EA4335",
-    "AGUARDANDO PROJETO": "#EA4335",
-    "AGUARDANDO INSTALAÇÃO": "#FBBC05",
+  const COLORS_MAP: Record<string, string> = {
+    "CONCLUÍDO": "#34A853", // Google Green
+    "EM ANDAMENTO": "#FBBC05", // Google Yellow
+    "PENDENTE": "#FBBC05", // Google Yellow
+    "ATRASADO": "#EA4335", // Google Red
+    "AGUARDANDO PROJETO": "#EA4335", // Google Red
+    "AGUARDANDO INSTALAÇÃO": "#FBBC05", // Google Yellow
+    "CANCELADO": "#70757a", // Gray
   };
 
-  const getColor = (name: string) => COLORS[name] || "#9CA3AF";
+  const PALETTE = [
+    "#4285F4", // Google Blue
+    "#34A853", // Google Green
+    "#FBBC05", // Google Yellow
+    "#EA4335", // Google Red
+    "#8AB4F8", // Light Blue
+    "#81C995", // Light Green
+    "#FDE293", // Light Yellow
+    "#F28B82", // Light Red
+  ];
+
+  const getColor = (name: string, index: number) => {
+    return COLORS_MAP[name] || PALETTE[index % PALETTE.length];
+  };
 
   return (
     <div className="h-full flex flex-col gap-2">
@@ -47,7 +62,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 dataKey="value"
               >
                 {instalacaoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
+                  <Cell key={`cell-${index}`} fill={getColor(entry.name, index)} />
                 ))}
               </Pie>
               <Tooltip />
@@ -72,7 +87,7 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
                 dataKey="value"
               >
                 {fabricacaoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getColor(entry.name)} />
+                  <Cell key={`cell-${index}`} fill={getColor(entry.name, index)} />
                 ))}
               </Pie>
               <Tooltip />

@@ -63,7 +63,7 @@ async function startServer() {
       }
       
       console.log("Reading Excel file from:", excelPath);
-      const workbook = readFile(excelPath);
+      const workbook = readFile(excelPath, { cellDates: true });
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       
@@ -73,7 +73,10 @@ async function startServer() {
       const normalizedData = jsonData.map((row: any) => {
         const newRow: any = {};
         for (const key in row) {
-          const cleanKey = key.trim().replace(/\s+/g, ' ');
+          // Remove non-breaking spaces and other hidden chars, then trim and normalize spaces
+          const cleanKey = key.replace(/[\u00A0\u1680\u180E\u2000-\u200B\u202F\u205F\u3000\uFEFF]/g, ' ')
+                              .trim()
+                              .replace(/\s+/g, ' ');
           newRow[cleanKey] = row[key];
         }
         return newRow;

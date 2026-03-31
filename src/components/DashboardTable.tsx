@@ -10,8 +10,8 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
   const getStatusColor = (status: string | undefined) => {
     const s = (status || "").trim().toUpperCase();
     if (s === "CONCLUÍDO") return "text-[var(--google-green)] font-semibold";
-    if (s === "EM ANDAMENTO") return "text-[var(--google-yellow)] font-semibold";
-    if (s === "PENDENTE" || s === "AGUARDANDO PROJETO") return "text-[var(--google-red)] font-semibold";
+    if (s === "EM ANDAMENTO" || s === "PENDENTE") return "text-[var(--google-yellow)] font-semibold";
+    if (s === "ATRASADO" || s === "AGUARDANDO PROJETO") return "text-[var(--google-red)] font-semibold";
     return "text-gray-500";
   };
 
