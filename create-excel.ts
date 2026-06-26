@@ -11,6 +11,15 @@ if (!fs.existsSync(searchDir)) {
 
 const outputPath = path.join(searchDir, "Serviços.xlsx");
 
+if (fs.existsSync(outputPath)) {
+  console.log("--------------------------------------------------");
+  console.log("AVISO: O arquivo 'Serviços.xlsx' já existe na pasta public.");
+  console.log("Nenhum arquivo foi criado ou sobrescrito para proteger seus dados reais.");
+  console.log("Se deseja gerar um novo arquivo de modelo, delete o existente primeiro.");
+  console.log("--------------------------------------------------");
+  process.exit(0);
+}
+
 const wb = utils.book_new();
 
 // Sheet 1: "!" containing Status and Color configurations

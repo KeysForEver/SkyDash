@@ -68,8 +68,7 @@ export default function App() {
     } catch (err: any) {
       console.warn("Fetch fallback notice:", err.message || err);
       if (!isBackground) {
-        console.warn("Could not load any Excel files from the server. Falling back to built-in demonstration data.");
-        loadDemoData();
+        setError("O arquivo 'Serviços.xlsx' não foi localizado no diretório 'public' do servidor. Por favor, coloque o seu arquivo real Serviços.xlsx na pasta 'public' do projeto para que a aplicação possa lê-lo dinamicamente.");
       } else {
         console.warn("Background auto-refresh failed to reach the server.");
       }
@@ -379,6 +378,14 @@ export default function App() {
         <div className="w-2/3 min-w-0 flex flex-col h-full overflow-hidden">
           <GithubCalendar data={data} months={[today, addMonths(today, 1)]} statusColorMap={statusColorMap} />
         </div>
+      </div>
+
+      {/* Floating Auto-Refresh Indicator - Discreetly placed in bottom-right corner */}
+      <div className="absolute bottom-6 right-6 z-50 flex items-center gap-2 px-2.5 py-1 bg-white/80 backdrop-blur-sm border border-gray-200/60 rounded-lg text-[10px] text-gray-500 font-medium select-none shadow-sm">
+        <span className={`h-1.5 w-1.5 rounded-full ${isRefreshing ? "bg-blue-500 animate-ping" : "bg-emerald-500"}`} />
+        <span>Atualiza em <strong className="font-mono">{nextUpdateSeconds}s</strong></span>
+        {lastUpdated && <span className="opacity-50">| Lida às {lastUpdated.toLocaleTimeString()}</span>}
+        {usingDemoData && <span className="text-amber-700 font-bold bg-amber-50 px-1 rounded border border-amber-200/50 ml-1">Demo</span>}
       </div>
     </main>
   );

@@ -4,8 +4,9 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx create-excel.ts && vite",
-    "build": "tsx create-excel.ts && vite build",
+    "dev": "vite",
+    "build": "vite build",
+    "setup-template": "tsx create-excel.ts",
     "preview": "vite preview",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
