@@ -7,55 +7,146 @@ import { ptBR } from "date-fns/locale";
 interface Props {
   data: Servico[];
   months?: Date[];
+  statusColorMap?: Record<string, string>;
 }
 
-export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths }) => {
+export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths, statusColorMap = {} }) => {
   const today = new Date();
   const months = customMonths || [
     today,
     addMonths(today, 1)
   ];
 
-  const getServicesOnDay = (date: Date) => {
-    return data.filter(item => {
-      const dateVal = item["DATA INSTALAÇÃO"] || item["DATA"];
-      if (!dateVal) return false;
-      
-      let itemDate: Date | null = null;
+  const parseExcelDate = (val: any): Date | null => {
+    if (!val) return null;
+    let date: Date | null = null;
 
-      if (dateVal instanceof Date) {
-        itemDate = dateVal;
-      } else if (typeof dateVal === "number") {
-        const excelEpoch = new Date(1899, 11, 30);
-        itemDate = new Date(excelEpoch.getTime() + dateVal * 86400000);
-      } else if (typeof dateVal === "string" && dateVal.includes("/")) {
-        const parts = dateVal.split("/");
+    if (val instanceof Date) {
+      date = val;
+    } else if (typeof val === "number") {
+      const excelEpoch = new Date(1899, 11, 30);
+      date = new Date(excelEpoch.getTime() + val * 86400000);
+    } else if (typeof val === "string" && val.trim() !== "") {
+      const trimmed = val.trim();
+      if (trimmed.includes("/")) {
+        const parts = trimmed.split("/");
         if (parts.length === 3) {
           const day = parseInt(parts[0], 10);
           const month = parseInt(parts[1], 10);
           const year = parseInt(parts[2], 10);
-          itemDate = new Date(year, month - 1, day);
+          const fullYear = year < 100 ? (year + 2000) : year;
+          date = new Date(fullYear, month - 1, day);
+        }
+      } else if (trimmed.includes("-")) {
+        const parts = trimmed.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            date = new Date(year, month - 1, day);
+          } else {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            const fullYear = year < 100 ? (year + 2000) : year;
+            date = new Date(fullYear, month - 1, day);
+          }
         }
       }
+    }
 
-      if (!itemDate || isNaN(itemDate.getTime())) {
-        itemDate = new Date(dateVal);
+    if (!date || isNaN(date.getTime())) {
+      date = new Date(val);
+    }
+
+    if (!date || isNaN(date.getTime())) {
+      return null;
+    }
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
+  const getServicesOnDay = (date: Date) => {
+    const targetMidnight = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+
+    return data.filter(item => {
+      const dateInicialVal = item["DATA INICIAL"];
+      const dateFinalVal = item["DATA FINAL"];
+
+      if (dateInicialVal || dateFinalVal) {
+        const start = parseExcelDate(dateInicialVal);
+        const end = parseExcelDate(dateFinalVal);
+
+        if (start && end) {
+          return targetMidnight >= start && targetMidnight <= end;
+        } else if (start) {
+          return targetMidnight.getTime() === start.getTime();
+        } else if (end) {
+          return targetMidnight.getTime() === end.getTime();
+        }
+        return false;
       }
-      
-      return isSameDay(itemDate, date);
+
+      // Fallback a colunas legadas se existirem
+      const legacyVal = item["DATA INSTALAÇÃO"] || item["DATA"];
+      if (!legacyVal) return false;
+
+      const legacyDate = parseExcelDate(legacyVal);
+      if (!legacyDate) return false;
+
+      return targetMidnight.getTime() === legacyDate.getTime();
     });
+  };
+
+  const getContrastColor = (hexColor: string | null): string => {
+    if (!hexColor) return "text-gray-400";
+    
+    // Clean hex
+    const color = hexColor.replace("#", "");
+    if (color.length !== 6) return "text-white";
+    
+    const r = parseInt(color.substring(0, 2), 16);
+    const g = parseInt(color.substring(2, 4), 16);
+    const b = parseInt(color.substring(4, 6), 16);
+    
+    // Calculate YIQ contrast ratio
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return yiq >= 128 ? "text-gray-900" : "text-white";
   };
 
   const getDayStatusColor = (services: Servico[]) => {
     if (services.length === 0) return null;
 
-    const statuses = services.map(s => (s["STATUS INSTALAÇÃO"] || "").toUpperCase().trim());
+    const statuses = services.map(s => (s["STATUS INSTALAÇÃO"] || "").trim().toUpperCase());
     
-    if (statuses.some(s => s === "ATRASADO")) return "bg-[var(--google-red)] text-white";
-    if (statuses.some(s => s === "PENDENTE" || s === "EM ANDAMENTO" || s.includes("AGUARDANDO"))) return "bg-[var(--google-yellow)] text-gray-900";
-    if (statuses.every(s => s === "CONCLUÍDO")) return "bg-[var(--google-green)] text-white";
-    
-    return "bg-[var(--google-red)] text-white";
+    // Prioritize statuses
+    const alertStatus = statuses.find(s => s === "ATRASADO");
+    if (alertStatus && statusColorMap[alertStatus]) {
+      return statusColorMap[alertStatus];
+    }
+
+    const warningStatus = statuses.find(s => s === "PENDENTE" || s === "EM ANDAMENTO" || s.includes("AGUARDANDO"));
+    if (warningStatus && statusColorMap[warningStatus]) {
+      return statusColorMap[warningStatus];
+    }
+
+    const activeStatus = statuses.find(s => s !== "CONCLUÍDO" && statusColorMap[s]);
+    if (activeStatus) {
+      return statusColorMap[activeStatus];
+    }
+
+    const completedStatus = statuses.find(s => s === "CONCLUÍDO");
+    if (completedStatus && statusColorMap[completedStatus]) {
+      return statusColorMap[completedStatus];
+    }
+
+    const firstStatus = statuses.find(s => statusColorMap[s]);
+    if (firstStatus) {
+      return statusColorMap[firstStatus];
+    }
+
+    return "#70757a"; 
   };
 
   const renderMonth = (monthDate: Date) => {
@@ -80,16 +171,19 @@ export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths }) 
             const isCurrentMonth = day.getMonth() === monthDate.getMonth();
             const isToday = isSameDay(day, today);
             const services = isCurrentMonth ? getServicesOnDay(day) : [];
-            const statusClass = isCurrentMonth ? getDayStatusColor(services) : null;
+            const statusColor = isCurrentMonth ? getDayStatusColor(services) : null;
+            const contrastClass = getContrastColor(statusColor);
             
             return (
               <div
                 key={i}
                 className={cn(
                   "rounded-lg transition-all duration-300 flex flex-col p-1 min-h-0 overflow-hidden border",
-                  !isCurrentMonth ? "opacity-0 pointer-events-none" : (statusClass || "bg-gray-50 border-gray-100 text-gray-400"),
+                  !isCurrentMonth ? "opacity-0 pointer-events-none" : (!statusColor ? "bg-gray-50 border-gray-100" : ""),
+                  contrastClass,
                   isToday && "border-red-600 border-2 z-20 shadow-md ring-1 ring-red-600/20"
                 )}
+                style={isCurrentMonth && statusColor ? { backgroundColor: statusColor, borderColor: statusColor } : undefined}
               >
                 <span className="text-[10px] font-black shrink-0 mb-0.5">{isCurrentMonth && day.getDate()}</span>
                 <div className="flex-1 overflow-y-auto scrollbar-hide space-y-1.5">

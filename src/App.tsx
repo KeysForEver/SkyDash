@@ -11,35 +11,54 @@ export default function App() {
   const [data, setData] = useState<Servico[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [usingDemoData, setUsingDemoData] = useState(false);
+  const [statusColorMap, setStatusColorMap] = useState<Record<string, string>>({
+    "CONCLUÍDO": "#34A853",
+    "CONCLUÍDO C/ RESSALVAS": "#4285F4",
+    "PENDENTE": "#FBBC04",
+    "ATRASADO": "#EA4335"
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const today = new Date();
 
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Try to fetch the Excel file directly from the root
-      const response = await fetch("/Serviços.xlsx");
       
-      // Check if response is OK AND not an HTML page (common in SPA fallbacks)
-      const contentType = response.headers.get("content-type");
-      if (response.ok && contentType && !contentType.includes("text/html")) {
-        await processExcel(await response.arrayBuffer());
-        return;
-      }
-
-      // Try fallback names
-      const fallbackResponse = await fetch("/SERVIÇOS 22.xlsx");
-      const fallbackContentType = fallbackResponse.headers.get("content-type");
+      const fileNames = [
+        "/servicos.xlsx",
+        "/servicos_22.xlsx",
+        "/Serviços.xlsx",
+        "/SERVIÇOS 22.xlsx",
+        "/Servicos.xlsx",
+        "/SERVICOS 22.xlsx"
+      ];
       
-      if (fallbackResponse.ok && fallbackContentType && !fallbackContentType.includes("text/html")) {
-        await processExcel(await fallbackResponse.arrayBuffer());
-        return;
+      for (const fileName of fileNames) {
+        try {
+          console.log(`Attempting to fetch ${fileName}...`);
+          const response = await fetch(fileName);
+          const contentType = response.headers.get("content-type") || "";
+          console.log(`Response for ${fileName}: Status = ${response.status}, Content-Type = ${contentType}`);
+          
+          if (response.ok && !contentType.includes("text/html")) {
+            console.log(`Successfully fetched ${fileName}. Processing...`);
+            await processExcel(await response.arrayBuffer());
+            setUsingDemoData(false);
+            return;
+          } else {
+            console.warn(`Skipped ${fileName}: ok = ${response.ok}, contains text/html = ${contentType.includes("text/html")}`);
+          }
+        } catch (e) {
+          console.warn(`Failed to fetch ${fileName}:`, e);
+        }
       }
 
       throw new Error("Arquivo Excel não encontrado no servidor.");
     } catch (err) {
       console.error("Fetch error:", err);
-      setError("Arquivo 'Serviços.xlsx' não encontrado. Você pode carregar o arquivo manualmente ou usar dados de demonstração.");
+      console.warn("Could not load any Excel files from the server. Falling back to built-in demonstration data.");
+      loadDemoData();
     } finally {
       setLoading(false);
     }
@@ -67,33 +86,78 @@ export default function App() {
   const loadDemoData = () => {
     const demoData: Servico[] = [
       {
-        "DATA": "2026-03-31",
-        "SERVIÇOS": "PROJETO DEMO 01",
-        "FABRICAÇÃO (RESPONSÁVEL)": "EQUIPE A",
+        "DATA INICIAL": "22/06/2026",
+        "DATA FINAL": "25/06/2026",
+        "SERVIÇOS": "CARRINHOS ALVARO",
+        "FABRICAÇÃO (RESPONSÁVEL)": "ROBSON/DIEGO",
         "STATUS FABRICAÇÃO": "CONCLUÍDO",
-        "PINTURA": "ELETROSTÁTICA",
+        "PINTURA": "ELETROSTÁTICA/ CARLOS",
         "STATUS PINTURA": "CONCLUÍDO",
         "MÁQUINA": "ROUTER",
         "STATUS MÁQUINA": "CONCLUÍDO",
         "INSTALADOR": "DIEGO",
         "STATUS INSTALAÇÃO": "CONCLUÍDO",
-        "OBSERVAÇÕES": "DADOS DE EXEMPLO"
+        "OBSERVAÇÕES": "FALTA CLIENTE BUSCAR"
       },
       {
-        "DATA": "2026-04-05",
-        "SERVIÇOS": "PROJETO DEMO 02",
-        "FABRICAÇÃO (RESPONSÁVEL)": "EQUIPE B",
-        "STATUS FABRICAÇÃO": "EM ANDAMENTO",
-        "PINTURA": "N/A",
-        "STATUS PINTURA": "PENDENTE",
-        "MÁQUINA": "LASER",
-        "STATUS MÁQUINA": "EM ANDAMENTO",
-        "INSTALADOR": "CARLOS",
+        "DATA INICIAL": "26/06/2026",
+        "DATA FINAL": "26/06/2026",
+        "SERVIÇOS": "SINDI",
+        "FABRICAÇÃO (RESPONSÁVEL)": "ROBSON/ZAIDAN",
+        "STATUS FABRICAÇÃO": "CONCLUÍDO",
+        "PINTURA": "NÃO TEM PINTURA",
+        "STATUS PINTURA": "",
+        "MÁQUINA": "ROUTER",
+        "STATUS MÁQUINA": "",
+        "INSTALADOR": "RONALDO/PEDRO",
+        "STATUS INSTALAÇÃO": "CONCLUÍDO",
+        "OBSERVAÇÕES": "CLIENTE NAO QUIS INSTALAR A DA CAIXA DAGUA"
+      },
+      {
+        "DATA INICIAL": "25/06/2026",
+        "DATA FINAL": "29/06/2026",
+        "SERVIÇOS": "CONFIS LOGO LUMINARIA",
+        "FABRICAÇÃO (RESPONSÁVEL)": "ROBSON/ELDER",
+        "STATUS FABRICAÇÃO": "CONCLUÍDO",
+        "PINTURA": "DAVIDSON/ AUTOMOTIVA",
+        "STATUS PINTURA": "CONCLUÍDO",
+        "MÁQUINA": "ROUTER/LASER",
+        "STATUS MÁQUINA": "CONCLUÍDO",
+        "INSTALADOR": "PENDENTE",
         "STATUS INSTALAÇÃO": "PENDENTE",
-        "OBSERVAÇÕES": "DADOS DE EXEMPLO"
+        "OBSERVAÇÕES": "FALTA INSTALAÇÃO"
+      },
+      {
+        "DATA INICIAL": "28/06/2026",
+        "DATA FINAL": "28/06/2026",
+        "SERVIÇOS": "FELICIO ROCHO PARTE 1",
+        "FABRICAÇÃO (RESPONSÁVEL)": "DIEGO/FERNANDO",
+        "STATUS FABRICAÇÃO": "CONCLUÍDO",
+        "PINTURA": "DAVIDSON/ AUTOMOTIVA",
+        "STATUS PINTURA": "CONCLUÍDO",
+        "MÁQUINA": "ROUTER/LASER",
+        "STATUS MÁQUINA": "CONCLUÍDO",
+        "INSTALADOR": "RONALDO/PEDRO",
+        "STATUS INSTALAÇÃO": "CONCLUÍDO",
+        "OBSERVAÇÕES": "FALTA FAZR LIGAÇÃO ELETRICA AGUARDANDO CLIENTE COM PONTO DE ENERGIA"
+      },
+      {
+        "DATA INICIAL": "29/06/2026",
+        "DATA FINAL": "02/07/2026",
+        "SERVIÇOS": "AMORA BETIM",
+        "FABRICAÇÃO (RESPONSÁVEL)": "ROBSON/ELDER",
+        "STATUS FABRICAÇÃO": "CONCLUÍDO",
+        "PINTURA": "ELETROSTÁTICA/ CARLOS",
+        "STATUS PINTURA": "CONCLUÍDO",
+        "MÁQUINA": "ROUTER/LASER",
+        "STATUS MÁQUINA": "CONCLUÍDO",
+        "INSTALADOR": "BARBA",
+        "STATUS INSTALAÇÃO": "CONCLUÍDO",
+        "OBSERVAÇÕES": ""
       }
     ];
     setData(demoData);
+    setUsingDemoData(true);
     setError(null);
   };
 
@@ -106,15 +170,63 @@ export default function App() {
         throw new Error("O servidor retornou um arquivo HTML em vez de um Excel.");
       }
 
-      const workbook = XLSX.read(buffer, { cellDates: true });
+      const xlsxLib = (XLSX as any).default || XLSX;
+      const workbook = xlsxLib.read(buffer, { cellDates: true });
       if (!workbook.SheetNames.length) throw new Error("A planilha está vazia ou é inválida.");
+
+      // 1. Process Status & Colors Sheet ("!")
+      const defaultColors: Record<string, string> = {
+        "CONCLUÍDO": "#34A853",
+        "CONCLUÍDO C/ RESSALVAS": "#4285F4",
+        "PENDENTE": "#FBBC04",
+        "ATRASADO": "#EA4335"
+      };
       
-      const sheetName = workbook.SheetNames[0];
-      const worksheet = workbook.Sheets[sheetName];
-      const jsonData = XLSX.utils.sheet_to_json(worksheet, { defval: "" });
+      let parsedColors: Record<string, string> = { ...defaultColors };
+      const statusSheet = workbook.Sheets["!"];
+      
+      if (statusSheet) {
+        const statusJson = xlsxLib.utils.sheet_to_json(statusSheet, { defval: "" });
+        if (Array.isArray(statusJson) && statusJson.length > 0) {
+          const newMap: Record<string, string> = {};
+          statusJson.forEach((row: any) => {
+            let statusVal = "";
+            let corVal = "";
+            for (const key in row) {
+              const cleanKey = key.trim().toUpperCase();
+              if (cleanKey === "STATUS") {
+                statusVal = String(row[key]).trim().toUpperCase();
+              } else if (cleanKey === "COR" || cleanKey === "COLOR") {
+                corVal = String(row[key]).trim();
+              }
+            }
+            if (statusVal && corVal) {
+              newMap[statusVal] = corVal;
+            }
+          });
+          if (Object.keys(newMap).length > 0) {
+            parsedColors = newMap;
+          }
+        }
+      }
+      setStatusColorMap(parsedColors);
+
+      // 2. Process Services Sheet ("Planilha1" or fallback)
+      let servicesSheet = workbook.Sheets["Planilha1"];
+      if (!servicesSheet) {
+        // Fallback to first sheet that is not "!"
+        const nonStatusSheetName = workbook.SheetNames.find(name => name !== "!");
+        if (nonStatusSheetName) {
+          servicesSheet = workbook.Sheets[nonStatusSheetName];
+        } else {
+          servicesSheet = workbook.Sheets[workbook.SheetNames[0]];
+        }
+      }
+
+      const jsonData = xlsxLib.utils.sheet_to_json(servicesSheet, { defval: "" });
 
       if (!Array.isArray(jsonData) || jsonData.length === 0) {
-        console.warn("Nenhum dado encontrado na primeira aba da planilha.");
+        console.warn("Nenhum dado de serviço encontrado na aba de serviços.");
       }
 
       // Normalize keys
@@ -212,21 +324,29 @@ export default function App() {
 
   return (
     <main className="h-screen w-screen flex flex-col bg-gray-50 overflow-hidden">
+      <input 
+        type="file" 
+        ref={fileInputRef} 
+        onChange={handleFileUpload} 
+        accept=".xlsx, .xls" 
+        className="hidden" 
+      />
+
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden">
         {/* Column 1: Charts + Previous Month Calendar (1/3) */}
         <div className="w-1/3 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
           <div className="h-1/2 min-h-0">
-            <DashboardCharts data={data} />
+            <DashboardCharts data={data} statusColorMap={statusColorMap} />
           </div>
           <div className="h-1/2 min-h-0">
-            <GithubCalendar data={data} months={[subMonths(today, 1)]} />
+            <GithubCalendar data={data} months={[subMonths(today, 1)]} statusColorMap={statusColorMap} />
           </div>
         </div>
 
         {/* Column 2: Current and Next Month Calendar (2/3) */}
         <div className="w-2/3 min-w-0 flex flex-col h-full overflow-hidden">
-          <GithubCalendar data={data} months={[today, addMonths(today, 1)]} />
+          <GithubCalendar data={data} months={[today, addMonths(today, 1)]} statusColorMap={statusColorMap} />
         </div>
       </div>
     </main>

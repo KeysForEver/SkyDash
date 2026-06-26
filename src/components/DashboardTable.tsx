@@ -4,15 +4,19 @@ import { cn } from "../lib/utils";
 
 interface Props {
   data: Servico[];
+  statusColorMap?: Record<string, string>;
 }
 
-export const DashboardTable: React.FC<Props> = ({ data }) => {
-  const getStatusColor = (status: string | undefined) => {
+export const DashboardTable: React.FC<Props> = ({ data, statusColorMap = {} }) => {
+  const getStatusStyle = (status: string | undefined) => {
     const s = (status || "").trim().toUpperCase();
-    if (s === "CONCLUÍDO") return "text-[var(--google-green)] font-semibold";
-    if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return "text-[var(--google-yellow)] font-semibold";
-    if (s === "ATRASADO") return "text-[var(--google-red)] font-semibold";
-    return "text-gray-500";
+    if (statusColorMap[s]) {
+      return { color: statusColorMap[s], fontWeight: "bold" };
+    }
+    if (s === "CONCLUÍDO") return { color: "#34A853", fontWeight: "bold" };
+    if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return { color: "#FBBC05", fontWeight: "bold" };
+    if (s === "ATRASADO") return { color: "#EA4335", fontWeight: "bold" };
+    return { color: "#6b7280" }; // text-gray-500
   };
 
   return (
@@ -37,10 +41,16 @@ export const DashboardTable: React.FC<Props> = ({ data }) => {
               data.map((item, idx) => (
                 <tr key={idx} className="hover:bg-gray-50 transition-colors">
                   <td className="px-3 py-2 font-bold text-gray-900 text-xs leading-tight truncate max-w-[200px]">{item.SERVIÇOS || "-"}</td>
-                  <td className={cn("px-3 py-2 text-xs font-bold truncate", getStatusColor(item["STATUS FABRICAÇÃO"]))}>
+                  <td 
+                    className="px-3 py-2 text-xs truncate"
+                    style={getStatusStyle(item["STATUS FABRICAÇÃO"])}
+                  >
                     {item["STATUS FABRICAÇÃO"] || "PENDENTE"}
                   </td>
-                  <td className={cn("px-3 py-2 text-xs font-bold truncate", getStatusColor(item["STATUS INSTALAÇÃO"]))}>
+                  <td 
+                    className="px-3 py-2 text-xs truncate"
+                    style={getStatusStyle(item["STATUS INSTALAÇÃO"])}
+                  >
                     {item["STATUS INSTALAÇÃO"] || "PENDENTE"}
                   </td>
                 </tr>

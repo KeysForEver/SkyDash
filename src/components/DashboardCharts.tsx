@@ -4,9 +4,10 @@ import { Servico } from "../types";
 
 interface Props {
   data: Servico[];
+  statusColorMap?: Record<string, string>;
 }
 
-export const DashboardCharts: React.FC<Props> = ({ data }) => {
+export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {} }) => {
   // Chart 1: STATUS INSTALAÇÃO
   const getStatusCounts = (field: string) => {
     const counts: Record<string, number> = {};
@@ -35,6 +36,9 @@ export const DashboardCharts: React.FC<Props> = ({ data }) => {
 
   const getStatusColor = (statusName: string, index: number) => {
     const s = statusName.trim().toUpperCase();
+    if (statusColorMap[s]) {
+      return statusColorMap[s];
+    }
     if (s === "CONCLUÍDO") return "#34A853"; // Green
     if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return "#FBBC05"; // Yellow
     if (s === "ATRASADO") return "#EA4335"; // Red
