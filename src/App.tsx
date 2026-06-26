@@ -3,7 +3,7 @@ import { DashboardTable } from "./components/DashboardTable";
 import { DashboardCharts } from "./components/DashboardCharts";
 import { GithubCalendar } from "./components/GithubCalendar";
 import { Servico } from "./types";
-import { Loader2, AlertCircle, Upload, Play } from "lucide-react";
+import { Loader2, AlertCircle, Upload, Play, Clock, RefreshCw } from "lucide-react";
 import * as XLSX from "xlsx";
 import { addMonths, subMonths } from "date-fns";
 
@@ -12,6 +12,9 @@ export default function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [usingDemoData, setUsingDemoData] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [nextUpdateSeconds, setNextUpdateSeconds] = useState<number>(60);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [statusColorMap, setStatusColorMap] = useState<Record<string, string>>({
     "CONCLUÍDO": "#34A853",
     "CONCLUÍDO C/ RESSALVAS": "#4285F4",
@@ -21,9 +24,13 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const today = new Date();
 
-  const fetchData = async () => {
+  const fetchData = async (isBackground = false) => {
     try {
-      setLoading(true);
+      if (!isBackground) {
+        setLoading(true);
+      } else {
+        setIsRefreshing(true);
+      }
       
       const fileNames = [
         "/Serviços.xlsx",
@@ -45,6 +52,9 @@ export default function App() {
             console.log(`Successfully fetched ${fileName}. Processing...`);
             await processExcel(await response.arrayBuffer());
             setUsingDemoData(false);
+            setLastUpdated(new Date());
+            setNextUpdateSeconds(60);
+            setError(null);
             return;
           } else {
             console.warn(`Skipped ${fileName}: ok = ${response.ok}, contains text/html = ${contentType.includes("text/html")}`);
@@ -57,10 +67,15 @@ export default function App() {
       throw new Error("Arquivo Excel não encontrado no servidor.");
     } catch (err: any) {
       console.warn("Fetch fallback notice:", err.message || err);
-      console.warn("Could not load any Excel files from the server. Falling back to built-in demonstration data.");
-      loadDemoData();
+      if (!isBackground) {
+        console.warn("Could not load any Excel files from the server. Falling back to built-in demonstration data.");
+        loadDemoData();
+      } else {
+        console.warn("Background auto-refresh failed to reach the server.");
+      }
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
@@ -74,6 +89,9 @@ export default function App() {
         setLoading(true);
         const buffer = event.target?.result as ArrayBuffer;
         await processExcel(buffer);
+        setUsingDemoData(false);
+        setLastUpdated(new Date());
+        setNextUpdateSeconds(60);
       } catch (err: any) {
         setError(err.message || "Erro ao processar o arquivo enviado.");
       } finally {
@@ -158,6 +176,8 @@ export default function App() {
     ];
     setData(demoData);
     setUsingDemoData(true);
+    setLastUpdated(new Date());
+    setNextUpdateSeconds(60);
     setError(null);
   };
 
@@ -242,6 +262,8 @@ export default function App() {
       });
 
       setData(normalizedData as Servico[]);
+      setLastUpdated(new Date());
+      setNextUpdateSeconds(60);
       setError(null);
     } catch (err: any) {
       console.error("Processing error:", err);
@@ -251,11 +273,20 @@ export default function App() {
 
   useEffect(() => {
     fetchData();
-    // Auto-update every 5 minutes if data was fetched from server
-    const interval = setInterval(() => {
-      if (!error && data.length > 0) fetchData();
-    }, 5 * 60 * 1000);
-    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    const countdownTimer = setInterval(() => {
+      setNextUpdateSeconds((prev) => {
+        if (prev <= 1) {
+          fetchData(true);
+          return 60;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(countdownTimer);
   }, []);
 
   if (loading) {
