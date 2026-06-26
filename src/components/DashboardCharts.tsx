@@ -5,9 +5,10 @@ import { Servico } from "../types";
 interface Props {
   data: Servico[];
   statusColorMap?: Record<string, string>;
+  fabStatusColorMap?: Record<string, string>;
 }
 
-export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {} }) => {
+export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {}, fabStatusColorMap = {} }) => {
   // Chart 1: STATUS INSTALAÇÃO
   const getStatusCounts = (field: string) => {
     const counts: Record<string, number> = {};
@@ -34,10 +35,10 @@ export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {} }) 
     "#70757a", // Gray
   ];
 
-  const getStatusColor = (statusName: string, index: number) => {
+  const getStatusColor = (statusName: string, index: number, colorMap: Record<string, string>) => {
     const s = statusName.trim().toUpperCase();
-    if (statusColorMap[s]) {
-      return statusColorMap[s];
+    if (colorMap[s]) {
+      return colorMap[s];
     }
     if (s === "CONCLUÍDO") return "#34A853"; // Green
     if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return "#FBBC05"; // Yellow
@@ -62,7 +63,7 @@ export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {} }) 
                 dataKey="value"
               >
                 {instalacaoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index)} />
+                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index, statusColorMap)} />
                 ))}
               </Pie>
               <Tooltip />
@@ -87,7 +88,7 @@ export const DashboardCharts: React.FC<Props> = ({ data, statusColorMap = {} }) 
                 dataKey="value"
               >
                 {fabricacaoData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index)} />
+                  <Cell key={`cell-${index}`} fill={getStatusColor(entry.name, index, fabStatusColorMap)} />
                 ))}
               </Pie>
               <Tooltip />

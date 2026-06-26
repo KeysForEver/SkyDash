@@ -21,6 +21,12 @@ export default function App() {
     "PENDENTE": "#FBBC04",
     "ATRASADO": "#EA4335"
   });
+  const [fabStatusColorMap, setFabStatusColorMap] = useState<Record<string, string>>({
+    "CONCLUÍDO": "#34A853",
+    "CONCLUÍDO C/ RESSALVAS": "#4285F4",
+    "PENDENTE": "#FBBC04",
+    "ATRASADO": "#EA4335"
+  });
   const fileInputRef = useRef<HTMLInputElement>(null);
   const today = new Date();
 
@@ -230,11 +236,41 @@ export default function App() {
       }
       setStatusColorMap(parsedColors);
 
+      // 1b. Process Fabrication Status & Colors Sheet ("!!")
+      let parsedFabColors: Record<string, string> = { ...defaultColors };
+      const statusFabSheet = workbook.Sheets["!!"];
+      
+      if (statusFabSheet) {
+        const statusFabJson = xlsxLib.utils.sheet_to_json(statusFabSheet, { defval: "" });
+        if (Array.isArray(statusFabJson) && statusFabJson.length > 0) {
+          const newMap: Record<string, string> = {};
+          statusFabJson.forEach((row: any) => {
+            let statusVal = "";
+            let corVal = "";
+            for (const key in row) {
+              const cleanKey = key.trim().toUpperCase();
+              if (cleanKey === "STATUS") {
+                statusVal = String(row[key]).trim().toUpperCase();
+              } else if (cleanKey === "COR" || cleanKey === "COLOR") {
+                corVal = String(row[key]).trim();
+              }
+            }
+            if (statusVal && corVal) {
+              newMap[statusVal] = corVal;
+            }
+          });
+          if (Object.keys(newMap).length > 0) {
+            parsedFabColors = newMap;
+          }
+        }
+      }
+      setFabStatusColorMap(parsedFabColors);
+
       // 2. Process Services Sheet ("Planilha1" or fallback)
       let servicesSheet = workbook.Sheets["Planilha1"];
       if (!servicesSheet) {
-        // Fallback to first sheet that is not "!"
-        const nonStatusSheetName = workbook.SheetNames.find(name => name !== "!");
+        // Fallback to first sheet that is not "!" or "!!"
+        const nonStatusSheetName = workbook.SheetNames.find(name => name !== "!" && name !== "!!");
         if (nonStatusSheetName) {
           servicesSheet = workbook.Sheets[nonStatusSheetName];
         } else {
@@ -367,7 +403,7 @@ export default function App() {
         {/* Column 1: Charts + Previous Month Calendar (1/3) */}
         <div className="w-1/3 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
           <div className="h-1/2 min-h-0">
-            <DashboardCharts data={data} statusColorMap={statusColorMap} />
+            <DashboardCharts data={data} statusColorMap={statusColorMap} fabStatusColorMap={fabStatusColorMap} />
           </div>
           <div className="h-1/2 min-h-0">
             <GithubCalendar data={data} months={[subMonths(today, 1)]} statusColorMap={statusColorMap} />
