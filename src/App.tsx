@@ -26,12 +26,12 @@ export default function App() {
       setLoading(true);
       
       const fileNames = [
-        "/servicos.xlsx",
-        "/servicos_22.xlsx",
         "/Serviços.xlsx",
-        "/SERVIÇOS 22.xlsx",
-        "/Servicos.xlsx",
-        "/SERVICOS 22.xlsx"
+        "/Servi%C3%A7os.xlsx",
+        "Serviços.xlsx",
+        "Servi%C3%A7os.xlsx",
+        "/servicos.xlsx",
+        "/Servicos.xlsx"
       ];
       
       for (const fileName of fileNames) {
@@ -55,8 +55,8 @@ export default function App() {
       }
 
       throw new Error("Arquivo Excel não encontrado no servidor.");
-    } catch (err) {
-      console.error("Fetch error:", err);
+    } catch (err: any) {
+      console.warn("Fetch fallback notice:", err.message || err);
       console.warn("Could not load any Excel files from the server. Falling back to built-in demonstration data.");
       loadDemoData();
     } finally {
