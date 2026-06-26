@@ -106,6 +106,79 @@ export default function App() {
     reader.readAsArrayBuffer(file);
   };
 
+  const parseExcelDateForDelay = (val: any): Date | null => {
+    if (!val) return null;
+    let date: Date | null = null;
+
+    if (val instanceof Date) {
+      date = val;
+    } else if (typeof val === "number") {
+      const excelEpoch = new Date(1899, 11, 30);
+      date = new Date(excelEpoch.getTime() + val * 86400000);
+    } else if (typeof val === "string" && val.trim() !== "") {
+      const trimmed = val.trim();
+      if (trimmed.includes("/")) {
+        const parts = trimmed.split("/");
+        if (parts.length === 3) {
+          const day = parseInt(parts[0], 10);
+          const month = parseInt(parts[1], 10);
+          const year = parseInt(parts[2], 10);
+          const fullYear = year < 100 ? (year + 2000) : year;
+          date = new Date(fullYear, month - 1, day);
+        }
+      } else if (trimmed.includes("-")) {
+        const parts = trimmed.split("-");
+        if (parts.length === 3) {
+          if (parts[0].length === 4) {
+            const year = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const day = parseInt(parts[2], 10);
+            date = new Date(year, month - 1, day);
+          } else {
+            const day = parseInt(parts[0], 10);
+            const month = parseInt(parts[1], 10);
+            const year = parseInt(parts[2], 10);
+            const fullYear = year < 100 ? (year + 2000) : year;
+            date = new Date(fullYear, month - 1, day);
+          }
+        }
+      }
+    }
+
+    if (!date || isNaN(date.getTime())) {
+      date = new Date(val);
+    }
+
+    if (!date || isNaN(date.getTime())) {
+      return null;
+    }
+
+    return new Date(date.getFullYear(), date.getMonth(), date.getDate());
+  };
+
+  const adjustDelayedServices = (services: Servico[]): Servico[] => {
+    const todayObj = new Date();
+    const todayMidnight = new Date(todayObj.getFullYear(), todayObj.getMonth(), todayObj.getDate());
+
+    return services.map(service => {
+      const statusInstalacao = (service["STATUS INSTALAÇÃO"] || "").trim().toUpperCase();
+      const hasDateFinal = service["DATA FINAL"];
+      
+      const isCompleted = statusInstalacao.startsWith("CONCLUÍDO") || statusInstalacao.includes("CONCLUÍDO");
+      
+      if (!isCompleted && hasDateFinal) {
+        const end = parseExcelDateForDelay(hasDateFinal);
+        if (end && todayMidnight > end) {
+          return {
+            ...service,
+            "STATUS INSTALAÇÃO": "ATRASADO"
+          };
+        }
+      }
+      return service;
+    });
+  };
+
   const loadDemoData = () => {
     const demoData: Servico[] = [
       {
@@ -179,7 +252,7 @@ export default function App() {
         "OBSERVAÇÕES": ""
       }
     ];
-    setData(demoData);
+    setData(adjustDelayedServices(demoData));
     setUsingDemoData(true);
     setLastUpdated(new Date());
     setNextUpdateSeconds(60);
@@ -296,7 +369,7 @@ export default function App() {
         return newRow;
       });
 
-      setData(normalizedData as Servico[]);
+      setData(adjustDelayedServices(normalizedData as Servico[]));
       setLastUpdated(new Date());
       setNextUpdateSeconds(60);
       setError(null);
