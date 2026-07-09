@@ -160,6 +160,63 @@ export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths, st
     return "#70757a";
   };
 
+  const getPillStyleAndClass = (text: string, totalServices: number) => {
+    const len = text.length;
+    let fontSize = "7.5px";
+    let paddingClass = "px-1 py-0.5";
+    let lineHeight = "1.05";
+
+    if (totalServices === 1) {
+      if (len > 40) {
+        fontSize = "5.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 25) {
+        fontSize = "6.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 15) {
+        fontSize = "7.5px";
+        paddingClass = "px-1 py-0.5";
+      } else {
+        fontSize = "8.5px";
+        paddingClass = "px-1 py-0.5";
+      }
+    } else if (totalServices === 2) {
+      if (len > 40) {
+        fontSize = "5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 25) {
+        fontSize = "5.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 15) {
+        fontSize = "6.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else {
+        fontSize = "7.5px";
+        paddingClass = "px-0.5 py-0.5";
+      }
+    } else {
+      // 3 or more services
+      if (len > 40) {
+        fontSize = "4.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 25) {
+        fontSize = "5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else if (len > 15) {
+        fontSize = "5.5px";
+        paddingClass = "px-0.5 py-0.5";
+      } else {
+        fontSize = "6.5px";
+        paddingClass = "px-0.5 py-0.5";
+      }
+    }
+
+    return {
+      style: { fontSize, lineHeight },
+      paddingClass
+    };
+  };
+
   const renderMonth = (monthDate: Date) => {
     const start = startOfMonth(monthDate);
     const end = endOfMonth(monthDate);
@@ -207,14 +264,19 @@ export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths, st
                   {services.map((s, sIdx) => {
                     const pillColor = getSingleServiceColor(s);
                     const contrastClass = getContrastColor(pillColor);
+                    const { style, paddingClass } = getPillStyleAndClass(s.SERVIÇOS || "", services.length);
                     return (
                       <div 
                         key={sIdx} 
-                        className={cn("text-[7.5px] leading-[1.2] font-black uppercase break-words px-1 py-0.5 rounded border border-black/5 flex flex-col justify-between shadow-sm", contrastClass)}
-                        style={{ backgroundColor: pillColor }}
+                        className={cn("font-black uppercase break-words rounded border border-black/5 flex flex-col justify-center shadow-sm text-center", paddingClass, contrastClass)}
+                        style={{ 
+                          backgroundColor: pillColor,
+                          fontSize: style.fontSize,
+                          lineHeight: style.lineHeight
+                        }}
                         title={`${s.SERVIÇOS} - ${s["STATUS INSTALAÇÃO"]}`}
                       >
-                        <div className="line-clamp-2 leading-none">{s.SERVIÇOS}</div>
+                        {s.SERVIÇOS}
                       </div>
                     );
                   })}
