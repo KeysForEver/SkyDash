@@ -473,8 +473,8 @@ export default function App() {
 
       {/* Main Content Area */}
       <div className="flex-1 flex gap-4 p-4 min-h-0 overflow-hidden">
-        {/* Column 1: Charts + Previous Month Calendar (1/3) */}
-        <div className="w-1/3 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
+        {/* Column 1: Charts + Previous Month Calendar (25%) */}
+        <div className="w-1/4 min-w-0 flex flex-col h-full gap-4 overflow-hidden">
           <div className="h-1/2 min-h-0">
             <DashboardCharts data={data} statusColorMap={statusColorMap} fabStatusColorMap={fabStatusColorMap} />
           </div>
@@ -483,9 +483,14 @@ export default function App() {
           </div>
         </div>
 
-        {/* Column 2: Current and Next Month Calendar (2/3) */}
-        <div className="w-2/3 min-w-0 flex flex-col h-full overflow-hidden">
-          <GithubCalendar data={data} months={[today, addMonths(today, 1)]} statusColorMap={statusColorMap} />
+        {/* Column 2: Current Month Calendar (50%) */}
+        <div className="w-1/2 min-w-0 flex flex-col h-full overflow-hidden">
+          <GithubCalendar data={data} months={[today]} statusColorMap={statusColorMap} />
+        </div>
+
+        {/* Column 3: Next Month Calendar (25%) */}
+        <div className="w-1/4 min-w-0 flex flex-col h-full overflow-hidden">
+          <GithubCalendar data={data} months={[addMonths(today, 1)]} statusColorMap={statusColorMap} />
         </div>
       </div>
 
