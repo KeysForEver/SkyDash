@@ -149,6 +149,17 @@ export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths, st
     return "#70757a"; 
   };
 
+  const getSingleServiceColor = (service: Servico): string => {
+    const s = (service["STATUS INSTALAÇÃO"] || "").trim().toUpperCase();
+    if (statusColorMap[s]) {
+      return statusColorMap[s];
+    }
+    if (s === "CONCLUÍDO") return "#34A853";
+    if (s === "EM ANDAMENTO" || s === "PENDENTE" || s.includes("AGUARDANDO")) return "#FBBC05";
+    if (s === "ATRASADO") return "#EA4335";
+    return "#70757a";
+  };
+
   const renderMonth = (monthDate: Date) => {
     const start = startOfMonth(monthDate);
     const end = endOfMonth(monthDate);
@@ -171,31 +182,42 @@ export const GithubCalendar: React.FC<Props> = ({ data, months: customMonths, st
             const isCurrentMonth = day.getMonth() === monthDate.getMonth();
             const isToday = isSameDay(day, today);
             const services = isCurrentMonth ? getServicesOnDay(day) : [];
-            const statusColor = isCurrentMonth ? getDayStatusColor(services) : null;
-            const contrastClass = getContrastColor(statusColor);
             
             return (
               <div
                 key={i}
                 className={cn(
                   "rounded-lg transition-all duration-300 flex flex-col p-1 min-h-0 overflow-hidden border",
-                  !isCurrentMonth ? "opacity-0 pointer-events-none" : (!statusColor ? "bg-gray-50 border-gray-100" : ""),
-                  contrastClass,
-                  isToday && "border-red-600 border-2 z-20 shadow-md ring-1 ring-red-600/20"
+                  !isCurrentMonth ? "opacity-0 pointer-events-none" : "",
+                  isCurrentMonth && (services.length === 0 ? "bg-slate-50 border-slate-100 text-gray-400" : "bg-white border-slate-200 text-gray-800 shadow-sm"),
+                  isToday && "border-blue-600 border-2 z-20 shadow-md ring-1 ring-blue-600/20"
                 )}
-                style={isCurrentMonth && statusColor ? { backgroundColor: statusColor, borderColor: statusColor } : undefined}
               >
-                <span className="text-[10px] font-black shrink-0 mb-0.5">{isCurrentMonth && day.getDate()}</span>
-                <div className="flex-1 overflow-y-auto scrollbar-hide space-y-1.5">
-                  {services.map((s, sIdx) => (
-                    <div 
-                      key={sIdx} 
-                      className="text-[7px] leading-[1.2] font-bold uppercase break-words bg-white/20 px-0.5 rounded"
-                      title={s.SERVIÇOS}
-                    >
-                      {s.SERVIÇOS}
-                    </div>
-                  ))}
+                <div className="flex items-center justify-between shrink-0 mb-1">
+                  <span className={cn("text-[10px] font-black leading-none", services.length > 0 ? "text-gray-900" : "text-gray-400")}>
+                    {isCurrentMonth && day.getDate()}
+                  </span>
+                  {services.length > 0 && (
+                    <span className="text-[8px] px-1 bg-slate-100 text-slate-500 rounded font-black leading-none">
+                      {services.length}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto scrollbar-hide space-y-1">
+                  {services.map((s, sIdx) => {
+                    const pillColor = getSingleServiceColor(s);
+                    const contrastClass = getContrastColor(pillColor);
+                    return (
+                      <div 
+                        key={sIdx} 
+                        className={cn("text-[7.5px] leading-[1.2] font-black uppercase break-words px-1 py-0.5 rounded border border-black/5 flex flex-col justify-between shadow-sm", contrastClass)}
+                        style={{ backgroundColor: pillColor }}
+                        title={`${s.SERVIÇOS} - ${s["STATUS INSTALAÇÃO"]}`}
+                      >
+                        <div className="line-clamp-2 leading-none">{s.SERVIÇOS}</div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             );
